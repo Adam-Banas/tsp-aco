@@ -4,6 +4,7 @@
 #include <random>
 #include <vector>
 
+#include "AcoAlgorithm.hpp"
 #include "utils.hpp"
 
 using Graph = std::vector<std::vector<int>>;
