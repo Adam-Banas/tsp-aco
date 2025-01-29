@@ -33,6 +33,30 @@ FGraph make_pheromones_graph(int cities, float min_pheromone) {
     return FGraph(cities, std::vector<float>(cities, min_pheromone));
 }
 
+auto path_length(const Graph& graph, const Path& path) {
+    int length = 0;
+    for (int i = 0; i < path.size(); ++i) {
+        // Path stores visited cities in order. It is a round trip, so the last distance is from the
+        // last city directly to the first one
+        auto src = path[i];
+        auto dst = path[(i + 1) % path.size()];
+
+        length += graph[src][dst];
+    }
+
+    return length;
+}
+
+const Path& get_shortest_path(const Graph& graph, const std::vector<Path>& paths) {
+    if (paths.empty()) {
+        throw std::runtime_error("get_shortest_path: Empty paths container!");
+    }
+
+    return *std::min_element(begin(paths), end(paths), [&](const Path& a, const Path& b) {
+        return path_length(graph, a) < path_length(graph, b);
+    });
+}
+
 int main(int argc, char* argv[]) {
     // Configuration
     int   cities = 10;
@@ -46,9 +70,12 @@ int main(int argc, char* argv[]) {
     auto               distances = make_distances_graph(cities, gen);
     auto               pheromones = make_pheromones_graph(cities, min_pheromone);
 
+    Path shortest_path(cities);
+    std::iota(begin(shortest_path), end(shortest_path), 0);
+
     // Main loop
     int64_t a = 0;
-    while (true) {
+    for (int i = 0; i < 20; ++i) {
         if (a % 100000 == 0) {
             std::cout << "Starting iteration number " << a << std::endl;
         }
@@ -87,7 +114,16 @@ int main(int argc, char* argv[]) {
 
         // TODO: Update pheromones
 
-        // TODO: Get the shortest path from the agents, remember if shorter than shortest so far
+        // Get the shortest path from the agents, remember if shorter than shortest so far
+        auto current_shortest = get_shortest_path(distances, paths);
+        std::cout << "\nIteration " << a << " results:\n";
+        std::cout << "Shortest path length: " << path_length(distances, current_shortest) << "\n";
+        std::cout << "Best so far: " << path_length(distances, shortest_path) << "\n";
+        if (path_length(distances, current_shortest) < path_length(distances, shortest_path)) {
+            shortest_path = current_shortest;
+        }
+
+        //
         ++a;
     }
 }
