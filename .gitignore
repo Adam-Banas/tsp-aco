@@ -36,3 +36,4 @@ build
 
 # VS Code related
 .vscode
+CMakePresets.json
