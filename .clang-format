@@ -1,0 +1,13 @@
+# .clang-format
+---
+BasedOnStyle: LLVM
+IndentWidth: 4           # Use 4 spaces for indentation
+TabWidth: 4              # Tab size equivalent to 4 spaces
+UseTab: Never            # Use spaces instead of tabs
+ColumnLimit: 100         # Maximum characters per line
+BreakBeforeBraces: Attach # Attach opening braces on the same line
+AllowShortFunctionsOnASingleLine: Inline # Allow short functions in a single line
+SpaceBeforeParens: ControlStatements # Space before parentheses for control statements
+SortIncludes: true       # Sort include directives
+PointerAlignment: Left   # Place pointer alignment on the left (e.g., `int* ptr`)
+AlignConsecutiveDeclarations: true # Align consecutive declarations
