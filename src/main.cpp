@@ -68,10 +68,11 @@ int main(int argc, char* argv[]) {
     int max_iterations = std::stoi(argv[1]);
 
     // Configuration
-    int   cities = 10;
+    int   cities = 30;
     int   agents = cities;
     float min_pheromone = 1;
     float pheromone_evaporation = 0.9; // 10% of pheromone evaporates every iteration
+    float ant_pheromone_coeff = 10;
 
     // Initialization
     std::random_device rd;
@@ -118,11 +119,39 @@ int main(int argc, char* argv[]) {
                 auto target = utils::roullette(path_scores, gen);
                 path.push_back(target);
             }
-
-            //
         }
 
-        // TODO: Update pheromones
+        // Update pheromones
+        // Step 1: evaporation
+        for (std::size_t x = 0; x < cities; ++x) {
+            for (std::size_t y = 0; y < cities; ++y) {
+                pheromones[x][y] =
+                    std::max(pheromones[x][y] * pheromone_evaporation, min_pheromone);
+            }
+        }
+
+        // Step 2: Pheromones left by ants.
+        // Basic algorithm, where every ant leaves pheromones, and the amount is independent from
+        // other ants' solutions.
+        // No limit on total pheromone on a section.
+        for (const auto& path : paths) {
+            // The total amount of pheromone left by ant is inversely proportional to the distance
+            // covered by ant.
+            auto  length = path_length(distances, path);
+            float total_pheromone = ant_pheromone_coeff / length;
+
+            for (int i = 0; i < path.size(); ++i) {
+                // Path stores visited cities in order. It is a round trip, so the last distance is
+                // from the last city directly to the first one
+                auto src = path[i];
+                auto dst = path[(i + 1) % path.size()];
+
+                // The amount of pheromone to leave is proportional to the section length
+                float pheromone_to_leave = total_pheromone / distances[src][dst];
+                pheromones[src][dst] += pheromone_to_leave;
+                pheromones[dst][src] += pheromone_to_leave;
+            }
+        }
 
         // Get the shortest path from the agents, remember if shorter than shortest so far
         auto current_shortest = get_shortest_path(distances, paths);
