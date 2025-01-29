@@ -58,6 +58,15 @@ const Path& get_shortest_path(const Graph& graph, const std::vector<Path>& paths
 }
 
 int main(int argc, char* argv[]) {
+    // Parse command line arguments
+    if (argc != 2) {
+        std::cout
+            << "Ant Colony Optimization algorithm applied to the Travelling Salesman Problem.\n";
+        std::cout << "Usage: " << argv[0] << " iterations\n";
+        return 1;
+    }
+    int max_iterations = std::stoi(argv[1]);
+
     // Configuration
     int   cities = 10;
     int   agents = cities;
@@ -74,8 +83,7 @@ int main(int argc, char* argv[]) {
     std::iota(begin(shortest_path), end(shortest_path), 0);
 
     // Main loop
-    int64_t a = 0;
-    for (int i = 0; i < 20; ++i) {
+    for (int a = 0; a < max_iterations; ++a) {
         if (a % 100000 == 0) {
             std::cout << "Starting iteration number " << a << std::endl;
         }
@@ -122,8 +130,5 @@ int main(int argc, char* argv[]) {
         if (path_length(distances, current_shortest) < path_length(distances, shortest_path)) {
             shortest_path = current_shortest;
         }
-
-        //
-        ++a;
     }
 }
