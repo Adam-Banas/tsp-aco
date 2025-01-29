@@ -87,12 +87,14 @@ int main(int argc, char* argv[]) {
         if (a % 100000 == 0) {
             std::cout << "Starting iteration number " << a << std::endl;
         }
+
         // Generate solutions
         std::vector<Path> paths(agents);
         for (std::size_t i = 0; i < agents; ++i) {
             // One agent iteration
             auto& path = paths[i];
-            path.push_back(i); // Start from a city with index 'i'
+            path.push_back(i % cities); // Start from a city with index 'i', modulo in case the
+                                        // number of agents is higher than the number of cities
 
             // Choose one new destination in every iteration
             while (path.size() < cities) {
