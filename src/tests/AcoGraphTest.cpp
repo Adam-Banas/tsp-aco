@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
+#include <utility>
+#include <vector>
 
 #include "../AcoGraph.hpp"
+
+using aco::Graph;
 
 class AcoGraphTest : public ::testing::Test {
   public:
@@ -10,9 +14,25 @@ class AcoGraphTest : public ::testing::Test {
     std::mt19937 gen;
 };
 
-TEST_F(AcoGraphTest, CostIsNonZeroInitialized) {
+TEST_F(AcoGraphTest, ThrowsOnInvalidArguments) {
     std::size_t nodes = 10;
-    aco::Graph  graph(gen, nodes, /*initial_pheromone=*/1);
+    Graph       graph(gen, nodes, /*initial_pheromone=*/1);
+
+    std::vector<std::pair<Graph::Index, Graph::Index>> invalid_args{
+        {nodes, 0}, // src out of bounds
+        {0, nodes}, // dst out of bounds
+        {0, 0}      // src and dst equal
+    };
+
+    for (auto elem : invalid_args) {
+        EXPECT_THROW(graph.get_cost(elem.first, elem.second), std::invalid_argument);
+        EXPECT_THROW(graph.get_pheromone(elem.first, elem.second), std::invalid_argument);
+    }
+}
+
+TEST_F(AcoGraphTest, CostsAreNonZeroInitialized) {
+    std::size_t nodes = 10;
+    Graph       graph(gen, nodes, /*initial_pheromone=*/1);
 
     for (int i = 0; i < nodes; ++i) {
         for (int j = 0; j < nodes; ++j) {
@@ -26,9 +46,9 @@ TEST_F(AcoGraphTest, CostIsNonZeroInitialized) {
     }
 }
 
-TEST_F(AcoGraphTest, CostIsInitializedSymmetrically) {
+TEST_F(AcoGraphTest, CostsAreInitializedSymmetrically) {
     std::size_t nodes = 10;
-    aco::Graph  graph(gen, nodes, /*initial_pheromone=*/1);
+    Graph       graph(gen, nodes, /*initial_pheromone=*/1);
 
     for (int i = 0; i < nodes; ++i) {
         for (int j = 0; j < nodes; ++j) {
@@ -43,18 +63,19 @@ TEST_F(AcoGraphTest, CostIsInitializedSymmetrically) {
     }
 }
 
-TEST_F(AcoGraphTest, ThrowsWhenIndexIsOutOfRange) {
+TEST_F(AcoGraphTest, PheromonesAreInitialized) {
     std::size_t nodes = 10;
-    aco::Graph  graph(gen, nodes, /*initial_pheromone=*/1);
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
 
-    EXPECT_THROW(graph.get_cost(nodes, 0), std::invalid_argument);
-    EXPECT_THROW(graph.get_cost(0, nodes), std::invalid_argument);
-}
+    for (int i = 0; i < nodes; ++i) {
+        for (int j = 0; j < nodes; ++j) {
+            if (i == j) {
+                continue;
+            }
 
-TEST_F(AcoGraphTest, ThrowsWhenSrcAndDstAreTheSame) {
-    std::size_t nodes = 10;
-    aco::Graph  graph(gen, nodes, /*initial_pheromone=*/1);
-
-    EXPECT_THROW(graph.get_cost(0, 0), std::invalid_argument);
-    EXPECT_THROW(graph.get_cost(0, 0), std::invalid_argument);
+            // Every path should have pheromone initialized
+            EXPECT_EQ(initial_pheromone, graph.get_pheromone(i, j));
+        }
+    }
 }

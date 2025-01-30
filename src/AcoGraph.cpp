@@ -6,7 +6,8 @@
 namespace aco {
 
 Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float initial_pheromone)
-    : costs(nodes_input * nodes_input), pheromones(nodes_input * nodes_input), nodes(nodes_input) {
+    : costs(nodes_input * nodes_input), pheromones(nodes_input * nodes_input, initial_pheromone),
+      nodes(nodes_input) {
 
     std::uniform_int_distribution<> distrib(1, /*max_dist=*/10);
 
@@ -25,7 +26,7 @@ int Graph::get_cost(Index src, Index dst) const {
 }
 
 float Graph::get_pheromone(Index src, Index dst) const {
-    return 0;
+    return pheromones.at(internal_index(src, dst));
 }
 
 float Graph::set_pheromone(Index src, Index dst, float value) {
