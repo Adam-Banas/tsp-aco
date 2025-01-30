@@ -27,6 +27,10 @@ TEST_F(AcoGraphTest, ThrowsOnInvalidArguments) {
     for (auto elem : invalid_args) {
         EXPECT_THROW(graph.get_cost(elem.first, elem.second), std::invalid_argument);
         EXPECT_THROW(graph.get_pheromone(elem.first, elem.second), std::invalid_argument);
+        EXPECT_THROW(graph.set_pheromone(elem.first, elem.second, /*value=*/0.7),
+                     std::invalid_argument);
+        EXPECT_THROW(graph.add_pheromone_two_way(elem.first, elem.second, /*value=*/0.7),
+                     std::invalid_argument);
     }
 }
 
@@ -76,6 +80,83 @@ TEST_F(AcoGraphTest, PheromonesAreInitialized) {
 
             // Every path should have pheromone initialized
             EXPECT_EQ(initial_pheromone, graph.get_pheromone(i, j));
+        }
+    }
+}
+
+TEST_F(AcoGraphTest, SetPheromone) {
+    std::size_t nodes = 10;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    float        new_pheromone = 0.9;
+    Graph::Index src = 3, dst = 4;
+    graph.set_pheromone(src, dst, new_pheromone);
+    EXPECT_EQ(new_pheromone, graph.get_pheromone(src, dst));
+}
+
+TEST_F(AcoGraphTest, AddPheromoneTwoWay) {
+    std::size_t nodes = 10;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    float        added = 0.5;
+    Graph::Index src = 3, dst = 4;
+    graph.add_pheromone_two_way(src, dst, added);
+
+    // Pheromone should be added both ways
+    float new_pheromone = initial_pheromone + added;
+    EXPECT_EQ(new_pheromone, graph.get_pheromone(src, dst));
+    EXPECT_EQ(new_pheromone, graph.get_pheromone(dst, src));
+}
+
+TEST_F(AcoGraphTest, UpdateAll) {
+    // Initialize
+    std::size_t nodes = 10;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    // Update
+    float update_coefficient = 1.2;
+    graph.update_all(update_coefficient);
+
+    // All elements should be updated
+    float new_pheromone = initial_pheromone * update_coefficient;
+    for (Graph::Index i = 0; i < nodes; ++i) {
+        for (Graph::Index j = 0; j < nodes; ++j) {
+            if (i == j) {
+                continue;
+            }
+            EXPECT_EQ(new_pheromone, graph.get_pheromone(i, j));
+        }
+    }
+}
+
+TEST_F(AcoGraphTest, UpdateAllShouldNotGoBelowInitial) {
+    // Initialize
+    std::size_t nodes = 10;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    // Set one value to above initial level
+    float        pheromone_after_increase = 1.9;
+    Graph::Index src = 5, dst = 2;
+    graph.set_pheromone(src, dst, pheromone_after_increase);
+
+    // Initial pheromone is the lowest possible value, so the following shouldn't have any effect on
+    // most elements
+    float update_coefficient = 0.9;
+    graph.update_all(update_coefficient);
+
+    // Verify
+    float pheromone_after_update = pheromone_after_increase * update_coefficient;
+    for (Graph::Index i = 0; i < nodes; ++i) {
+        for (Graph::Index j = 0; j < nodes; ++j) {
+            if (i == j) {
+                continue;
+            }
+            auto expected = (i == src && j == dst) ? pheromone_after_update : initial_pheromone;
+            EXPECT_EQ(expected, graph.get_pheromone(i, j));
         }
     }
 }

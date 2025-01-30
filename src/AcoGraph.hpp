@@ -14,6 +14,8 @@ namespace aco {
 // - Every function that takes two indices (as src and dst, or two-way), throws when they have the
 //   same value. In other words, can't determine the cost or pheromone amount on an edge to self,
 //   because such an edge does not exist.
+// - It is not possible to go under initial pheromone level - if a new value would be set to below
+//   initial level, it set to initial level instead.
 class Graph {
   public:
     using Index = std::size_t;
@@ -30,7 +32,7 @@ class Graph {
     // Basic graph manipulation
     int   get_cost(Index src, Index dst) const;
     float get_pheromone(Index src, Index dst) const;
-    float set_pheromone(Index src, Index dst, float value);
+    void  set_pheromone(Index src, Index dst, float value);
 
     // Convenience functions
     void add_pheromone_two_way(Index a, Index b, float amount);
@@ -43,6 +45,7 @@ class Graph {
     std::vector<int>   costs;
     std::vector<float> pheromones;
     std::size_t        nodes;
+    float              initial_pheromone;
 };
 
 } // namespace aco

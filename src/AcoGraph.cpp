@@ -1,13 +1,14 @@
 #include "AcoGraph.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
 namespace aco {
 
-Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float initial_pheromone)
-    : costs(nodes_input * nodes_input), pheromones(nodes_input * nodes_input, initial_pheromone),
-      nodes(nodes_input) {
+Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float init_pheromone)
+    : costs(nodes_input * nodes_input), pheromones(nodes_input * nodes_input, init_pheromone),
+      nodes(nodes_input), initial_pheromone(init_pheromone) {
 
     std::uniform_int_distribution<> distrib(1, /*max_dist=*/10);
 
@@ -29,13 +30,24 @@ float Graph::get_pheromone(Index src, Index dst) const {
     return pheromones.at(internal_index(src, dst));
 }
 
-float Graph::set_pheromone(Index src, Index dst, float value) {
-    return 0;
+void Graph::set_pheromone(Index src, Index dst, float value) {
+    pheromones.at(internal_index(src, dst)) = std::max(value, initial_pheromone);
 }
 
-void Graph::add_pheromone_two_way(Index a, Index b, float amount) {}
+void Graph::add_pheromone_two_way(Index a, Index b, float amount) {
+    // a -> b
+    auto index = internal_index(a, b);
+    pheromones.at(index) += amount;
 
-void Graph::update_all(float coefficient) {}
+    // b -> a
+    index = internal_index(b, a);
+    pheromones.at(index) += amount;
+}
+
+void Graph::update_all(float coefficient) {
+    std::transform(begin(pheromones), end(pheromones), begin(pheromones),
+                   [&](auto elem) { return std::max(elem * coefficient, initial_pheromone); });
+}
 
 Graph::Index Graph::internal_index(Index src, Index dst) const {
     if (src == dst || src >= nodes || dst >= nodes) {
