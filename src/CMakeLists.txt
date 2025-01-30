@@ -1,6 +1,11 @@
+add_library(
+    aco_algorithm SHARED
+    AcoAlgorithm.cpp
+    AcoGraph.cpp)
+
 add_executable(
     tcp_aco
-    AcoAlgorithm.cpp
-    AcoGraph.cpp
     main.cpp
 )
+
+add_subdirectory(tests)
