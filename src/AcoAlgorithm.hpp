@@ -13,21 +13,20 @@ namespace aco {
 
 // Main algorithm that uses ACO (Ant Colony Optimization) to solve a graph problem.
 // At the moment it is tightly coupled to solve TSP (Travelling Salesman Problem).
-class AcoAlgorithm {
+class Algorithm {
   public:
     using Path = std::vector<Graph::Index>;
 
     // Algorithm configuration
     struct Config {
-        int   agents_count;          // The number of agents per iteration (before pheromone update)
-        float min_pheromone;         // Pheromone amount will never go under this value
-        float pheromone_evaporation; // Pheromone evaporation coefficient: in [0,1] range:
-                                     // * 1 means no evaporation (100% pheromones remain)
-                                     // * 0 means full evaporation (0% pheromones remain)
+        std::size_t agents_count; // The number of agents per iteration (between pheromone updates)
+        float       pheromone_evaporation; // Pheromone evaporation coefficient: in [0,1] range:
+                                           // * 1 means no evaporation (100% pheromones remain)
+                                           // * 0 means full evaporation (0% pheromones remain)
     };
 
   public:
-    explicit AcoAlgorithm(std::unique_ptr<Graph> graph, Config config);
+    explicit Algorithm(Graph graph, Config config);
 
   public:
     // Accessors
@@ -38,9 +37,9 @@ class AcoAlgorithm {
     void advance();
 
   private:
-    std::unique_ptr<Graph> graph;
-    Config                 config;
-    Path                   shortest_path;
+    Graph  graph;
+    Config config;
+    Path   shortest_path;
 };
 
 } // namespace aco

@@ -11,6 +11,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 add_executable(
   tsp_aco_tests
+  AcoAlgorithmTest.cpp
   AcoGraphTest.cpp
 )
 target_link_libraries(
