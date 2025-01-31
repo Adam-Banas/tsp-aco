@@ -26,7 +26,7 @@ class Algorithm {
     };
 
   public:
-    explicit Algorithm(Graph graph, Config config);
+    explicit Algorithm(std::mt19937& random_generator, Graph graph, Config config);
 
   public:
     // Accessors
@@ -37,9 +37,14 @@ class Algorithm {
     void advance();
 
   private:
-    Graph  graph;
-    Config config;
-    Path   shortest_path;
+    // TODO: Move the following method to aco::Graph
+    int path_length(const Path& path) const;
+
+  private:
+    std::mt19937& gen;
+    Graph         graph;
+    Config        config;
+    Path          shortest_path;
 };
 
 } // namespace aco
