@@ -8,4 +8,9 @@ add_executable(
     main.cpp
 )
 
+target_link_libraries(
+    tcp_aco
+    aco_algorithm
+)
+
 add_subdirectory(tests)

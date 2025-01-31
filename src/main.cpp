@@ -4,36 +4,12 @@
 #include <random>
 #include <vector>
 
-#include "AcoAlgorithm.hpp"
+#include "AcoGraph.hpp"
 #include "utils.hpp"
 
-using Graph = std::vector<std::vector<int>>;
-using FGraph = std::vector<std::vector<float>>;
 using Path = std::vector<std::size_t>; // Indices of cities in order
 
-// A symmetric graph, with arbitrary numbers as distances
-Graph make_distances_graph(int cities, std::mt19937& gen) {
-    Graph edges(cities, std::vector<int>(cities));
-
-    std::uniform_int_distribution<> distrib(1, /*max_dist=*/10);
-
-    // Populate graph
-    for (int i = 0; i < cities; ++i) {
-        for (int j = i + 1; j < cities; ++j) {
-            auto dist = distrib(gen);
-            edges.at(i).at(j) = dist;
-            edges.at(j).at(i) = dist;
-        }
-    }
-
-    return edges;
-}
-
-FGraph make_pheromones_graph(int cities, float min_pheromone) {
-    return FGraph(cities, std::vector<float>(cities, min_pheromone));
-}
-
-auto path_length(const Graph& graph, const Path& path) {
+auto path_length(const aco::Graph& graph, const Path& path) {
     int length = 0;
     for (int i = 0; i < path.size(); ++i) {
         // Path stores visited cities in order. It is a round trip, so the last distance is from the
@@ -41,13 +17,13 @@ auto path_length(const Graph& graph, const Path& path) {
         auto src = path[i];
         auto dst = path[(i + 1) % path.size()];
 
-        length += graph[src][dst];
+        length += graph.get_cost(src, dst);
     }
 
     return length;
 }
 
-const Path& get_shortest_path(const Graph& graph, const std::vector<Path>& paths) {
+const Path& get_shortest_path(const aco::Graph& graph, const std::vector<Path>& paths) {
     if (paths.empty()) {
         throw std::runtime_error("get_shortest_path: Empty paths container!");
     }
@@ -77,8 +53,7 @@ int main(int argc, char* argv[]) {
     // Initialization
     std::random_device rd;
     std::mt19937       gen(rd());
-    auto               distances = make_distances_graph(cities, gen);
-    auto               pheromones = make_pheromones_graph(cities, min_pheromone);
+    auto               graph = aco::Graph(gen, cities, min_pheromone);
 
     Path shortest_path(cities);
     std::iota(begin(shortest_path), end(shortest_path), 0);
@@ -112,7 +87,8 @@ int main(int argc, char* argv[]) {
                     // Basic heuristic - just a reciprocal of the distance, so that shorter paths
                     // are preferred in general
                     // TODO: Precompute reciprocals of distances?
-                    path_scores[j] = pheromones[current_city][j] / distances[current_city][j];
+                    path_scores[j] =
+                        graph.get_pheromone(current_city, j) / graph.get_cost(current_city, j);
                 }
 
                 // Choose the target city using roullette random algorithm
@@ -123,12 +99,7 @@ int main(int argc, char* argv[]) {
 
         // Update pheromones
         // Step 1: evaporation
-        for (std::size_t x = 0; x < cities; ++x) {
-            for (std::size_t y = 0; y < cities; ++y) {
-                pheromones[x][y] =
-                    std::max(pheromones[x][y] * pheromone_evaporation, min_pheromone);
-            }
-        }
+        graph.update_all(pheromone_evaporation);
 
         // Step 2: Pheromones left by ants.
         // Basic algorithm, where every ant leaves pheromones, and the amount is independent from
@@ -137,7 +108,7 @@ int main(int argc, char* argv[]) {
         for (const auto& path : paths) {
             // The total amount of pheromone left by ant is inversely proportional to the distance
             // covered by ant.
-            auto  length = path_length(distances, path);
+            auto  length = path_length(graph, path);
             float total_pheromone = ant_pheromone_coeff / length;
 
             for (int i = 0; i < path.size(); ++i) {
@@ -147,18 +118,17 @@ int main(int argc, char* argv[]) {
                 auto dst = path[(i + 1) % path.size()];
 
                 // The amount of pheromone to leave is proportional to the section length
-                float pheromone_to_leave = total_pheromone / distances[src][dst];
-                pheromones[src][dst] += pheromone_to_leave;
-                pheromones[dst][src] += pheromone_to_leave;
+                float pheromone_to_leave = total_pheromone / graph.get_cost(src, dst);
+                graph.add_pheromone_two_way(src, dst, pheromone_to_leave);
             }
         }
 
         // Get the shortest path from the agents, remember if shorter than shortest so far
-        auto current_shortest = get_shortest_path(distances, paths);
+        auto current_shortest = get_shortest_path(graph, paths);
         std::cout << "\nIteration " << a << " results:\n";
-        std::cout << "Shortest path length: " << path_length(distances, current_shortest) << "\n";
-        std::cout << "Best so far: " << path_length(distances, shortest_path) << "\n";
-        if (path_length(distances, current_shortest) < path_length(distances, shortest_path)) {
+        std::cout << "Shortest path length: " << path_length(graph, current_shortest) << "\n";
+        std::cout << "Best so far: " << path_length(graph, shortest_path) << "\n";
+        if (path_length(graph, current_shortest) < path_length(graph, shortest_path)) {
             shortest_path = current_shortest;
         }
     }
