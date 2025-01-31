@@ -31,10 +31,11 @@ class Graph {
     explicit Graph(std::mt19937& random_generator, std::size_t nodes, float initial_pheromone);
 
   public:
-    // Basic graph manipulation
-    int   get_cost(Index src, Index dst) const;
-    float get_pheromone(Index src, Index dst) const;
-    void  set_pheromone(Index src, Index dst, float value);
+    // Basic graph operations
+    std::size_t get_size() const;
+    int         get_cost(Index src, Index dst) const;
+    float       get_pheromone(Index src, Index dst) const;
+    void        set_pheromone(Index src, Index dst, float value);
 
     // Convenience functions
     void add_pheromone_two_way(Index a, Index b, float amount);

@@ -18,11 +18,22 @@ static void validate_config(Algorithm::Config config) {
 }
 
 Algorithm::Algorithm(Graph graph_arg, Config config_arg)
-    : graph(std::move(graph_arg)), config(config_arg) {
+    : graph(std::move(graph_arg)), config(config_arg), shortest_path() {
+    // Validate arguments
     validate_config(config);
+
+    // Initialize shortest path just to be valid
+    shortest_path.resize(graph.get_size());
+    std::iota(begin(shortest_path), end(shortest_path), 0);
 }
 
-const Graph&           Algorithm::get_graph() const {}
-const Algorithm::Path& Algorithm::get_shortest_path() const {}
-void                   Algorithm::advance() {}
+const Graph& Algorithm::get_graph() const {
+    return graph;
+}
+
+const Algorithm::Path& Algorithm::get_shortest_path() const {
+    return shortest_path;
+}
+
+void Algorithm::advance() {}
 } // namespace aco

@@ -34,6 +34,13 @@ TEST_F(AcoGraphTest, ThrowsOnInvalidArguments) {
     }
 }
 
+TEST_F(AcoGraphTest, GetSize) {
+    std::size_t nodes = 10;
+    Graph       graph(gen, nodes, /*initial_pheromone=*/1);
+
+    EXPECT_EQ(nodes, graph.get_size());
+}
+
 TEST_F(AcoGraphTest, CostsAreNonZeroInitialized) {
     std::size_t nodes = 10;
     Graph       graph(gen, nodes, /*initial_pheromone=*/1);

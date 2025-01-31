@@ -21,6 +21,9 @@ Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float init
         }
     }
 }
+std::size_t Graph::get_size() const {
+    return nodes;
+}
 
 int Graph::get_cost(Index src, Index dst) const {
     return costs.at(internal_index(src, dst));
