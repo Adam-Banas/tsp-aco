@@ -20,6 +20,8 @@ class Graph {
   public:
     using Index = std::size_t;
 
+    friend bool operator==(const Graph&, const Graph&);
+
   public:
     // Create a graph with a given number of nodes.
     // Currently there's only one, implicit initialization method:
@@ -47,6 +49,11 @@ class Graph {
     std::size_t        nodes;
     float              initial_pheromone;
 };
+
+bool        operator==(const Graph& lhs, const Graph& rhs);
+inline bool operator!=(const Graph& lhs, const Graph& rhs) {
+    return !(lhs == rhs);
+}
 
 } // namespace aco
 

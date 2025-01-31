@@ -59,4 +59,8 @@ Graph::Index Graph::internal_index(Index src, Index dst) const {
     return src * nodes + dst;
 }
 
+bool operator==(const Graph& lhs, const Graph& rhs) {
+    return lhs.costs == rhs.costs && lhs.pheromones == rhs.pheromones;
+}
+
 } // namespace aco

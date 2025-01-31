@@ -84,6 +84,56 @@ TEST_F(AcoGraphTest, PheromonesAreInitialized) {
     }
 }
 
+TEST_F(AcoGraphTest, ManuallyCompareAfterCopy) {
+    std::size_t nodes = 30;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    Graph copy = graph;
+
+    for (int i = 0; i < nodes; ++i) {
+        for (int j = 0; j < nodes; ++j) {
+            if (i == j) {
+                continue;
+            }
+
+            EXPECT_EQ(graph.get_cost(i, j), copy.get_cost(i, j));
+            EXPECT_EQ(graph.get_pheromone(i, j), copy.get_pheromone(i, j));
+        }
+    }
+}
+
+TEST_F(AcoGraphTest, ComparisonOperatorAfterCopy) {
+    std::size_t nodes = 30;
+    float       initial_pheromone = 0.7;
+    Graph       graph(gen, nodes, initial_pheromone);
+
+    Graph copy = graph;
+
+    EXPECT_EQ(graph, copy);
+}
+
+TEST_F(AcoGraphTest, ComparisonOperatorOnGraphsWithDifferentCosts) {
+    std::size_t nodes = 30;
+    float       initial_pheromone = 0.7;
+    Graph       first(gen, nodes, initial_pheromone);
+    Graph       second(gen, nodes, initial_pheromone);
+
+    EXPECT_NE(first, second);
+}
+
+TEST_F(AcoGraphTest, ComparisonOperatorOnGraphsWithDifferentPheromones) {
+    std::size_t nodes = 30;
+    float       initial_pheromone = 0.7;
+    Graph       first(gen, nodes, initial_pheromone);
+
+    // Second graph as a copy of the first one, with changed amounts of pheromones
+    Graph second = first;
+    second.set_pheromone(/*src=*/3, /*dst*/ 4, /*value=*/1.7);
+
+    EXPECT_NE(first, second);
+}
+
 TEST_F(AcoGraphTest, SetPheromone) {
     std::size_t nodes = 10;
     float       initial_pheromone = 0.7;
