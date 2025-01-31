@@ -46,9 +46,12 @@ int main(int argc, char* argv[]) {
     // Configuration
     int   cities = 30;
     int   agents = cities;
-    float min_pheromone = 1;
     float pheromone_evaporation = 0.9; // 10% of pheromone evaporates every iteration
-    float ant_pheromone_coeff = 10;
+    float min_pheromone = 0.1;         // Minimum pheromone on an edge (which is also the starting
+                                       // pheromone). I observed the following rough guidelines:
+    // - The greater total distance to travel (depends on the number of cities and the distances
+    //   between them), the smaller this number needs to be.
+    // - The more ants we have, the bigger this number should be.
 
     // Initialization
     std::random_device rd;
@@ -108,8 +111,7 @@ int main(int argc, char* argv[]) {
         for (const auto& path : paths) {
             // The total amount of pheromone left by ant is inversely proportional to the distance
             // covered by ant.
-            auto  length = path_length(graph, path);
-            float total_pheromone = ant_pheromone_coeff / length;
+            float total_pheromone = 1.f / path_length(graph, path);
 
             for (int i = 0; i < path.size(); ++i) {
                 // Path stores visited cities in order. It is a round trip, so the last distance is
