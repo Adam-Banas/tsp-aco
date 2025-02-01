@@ -19,14 +19,20 @@ static void validate_config(Algorithm::Config config) {
     }
 }
 
+// Initialize shortest path just to be valid
+static auto make_valid_path(const Graph& graph) {
+    Algorithm::Path result(graph.get_size());
+    std::iota(begin(result), end(result), 0);
+    return result;
+}
+
 Algorithm::Algorithm(std::mt19937& random_generator, Graph graph_arg, Config config_arg)
     : gen(random_generator), graph(std::move(graph_arg)), config(config_arg), shortest_path() {
     // Validate arguments
     validate_config(config);
 
     // Initialize shortest path just to be valid
-    shortest_path.resize(graph.get_size());
-    std::iota(begin(shortest_path), end(shortest_path), 0);
+    shortest_path = make_valid_path(graph);
 }
 
 const Graph& Algorithm::get_graph() const {
@@ -37,8 +43,9 @@ const Algorithm::Path& Algorithm::get_shortest_path() const {
     return shortest_path;
 }
 
-void Algorithm::advance() {
+Algorithm::Path Algorithm::advance() {
     auto cities = graph.get_size();
+    Path iteration_best = make_valid_path(graph);
 
     // Generate solutions
     std::vector<Path> paths(config.agents_count);
@@ -74,8 +81,8 @@ void Algorithm::advance() {
         }
 
         // Path calculated - remember it if is shorter than the current best
-        if (path_length(path) < path_length(shortest_path)) {
-            shortest_path = path;
+        if (path_length(path) < path_length(iteration_best)) {
+            iteration_best = path;
         }
     }
 
@@ -103,6 +110,13 @@ void Algorithm::advance() {
             graph.add_pheromone_two_way(src, dst, pheromone_to_leave);
         }
     }
+
+    // If the iteration best path is shortest than the global shortest (best so far), remember it
+    if (path_length(iteration_best) < path_length(shortest_path)) {
+        shortest_path = iteration_best;
+    }
+
+    return iteration_best;
 }
 
 int Algorithm::path_length(const Path& path) const {

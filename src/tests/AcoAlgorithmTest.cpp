@@ -106,7 +106,7 @@ TEST_F(AcoAlgorithmTest, PheromonesAreUpdatedAfterSimulation) {
     EXPECT_NE(initial_graph, algorithm.get_graph());
 }
 
-TEST_F(AcoAlgorithmTest, PathIsValidAfterEveryIteration) {
+TEST_F(AcoAlgorithmTest, ShortestPathIsValidAfterEveryIteration) {
     // Initialize
     std::size_t nodes = 30;
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
@@ -141,4 +141,46 @@ TEST_F(AcoAlgorithmTest, FinalPathDifferFromTheInitialOne) {
     // Compare
     auto final_path = algorithm.get_shortest_path();
     EXPECT_NE(initial_path, final_path);
+}
+
+TEST_F(AcoAlgorithmTest, IterationBestPathIsValidAfterEveryIteration) {
+    // Initialize
+    std::size_t nodes = 30;
+    Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
+
+    const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
+    Algorithm               algorithm = make_algorithm(graph, config);
+
+    // Run simulation
+    for (int i = 0; i < 20; ++i) {
+        // Verify after every step
+        Algorithm::Path iter_best = algorithm.advance();
+        validate_path(graph, iter_best);
+    }
+}
+
+TEST_F(AcoAlgorithmTest, CompareIterationBestPathAndBestSoFar) {
+    // Initialize
+    std::size_t nodes = 30;
+    Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
+
+    const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
+    Algorithm               algorithm = make_algorithm(graph, config);
+
+    const int max_iterations = 20;
+    int       equal_count = 0;
+
+    // Run simulation
+    for (int i = 0; i < max_iterations; ++i) {
+        Algorithm::Path iter_best = algorithm.advance();
+        Algorithm::Path best_so_far = algorithm.get_shortest_path();
+
+        if (iter_best == best_so_far) {
+            ++equal_count;
+        }
+    }
+
+    // Expect that in some iterations best path is the best total, some don't
+    EXPECT_GT(equal_count, 0);
+    EXPECT_LT(equal_count, max_iterations);
 }
