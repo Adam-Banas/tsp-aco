@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <random>
 #include <vector>
@@ -11,6 +12,8 @@
 namespace aco {
 
 enum class DeviceType { CPU, GPU };
+
+std::ostream& operator<<(std::ostream&, DeviceType);
 
 // Base class for algorithms that use ACO (Ant Colony Optimization) to solve a graph problem.
 // At the moment it is tightly coupled to solve TSP (Travelling Salesman Problem).
@@ -28,6 +31,7 @@ class Algorithm {
 
   public:
     // Throws std::invalid_argument on invalid configuration.
+    // Throws std::runtime_error on other errors.
     explicit Algorithm(std::mt19937& random_generator, Graph graph, Config config);
     virtual ~Algorithm() = default;
 

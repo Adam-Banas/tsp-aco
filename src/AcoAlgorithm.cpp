@@ -7,6 +7,20 @@
 
 namespace aco {
 
+std::ostream& operator<<(std::ostream& out, DeviceType device) {
+    switch (device) {
+    case DeviceType::CPU:
+        out << "CPU";
+        return out;
+    case DeviceType::GPU:
+        out << "GPU";
+        return out;
+    }
+
+    out << "unknown";
+    return out;
+}
+
 static void validate_config(Algorithm::Config config) {
     if (config.agents_count == 0) {
         std::cerr << "aco::Algorithm invalid argument. Agent count should be non-zero!\n";
