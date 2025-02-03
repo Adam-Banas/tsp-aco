@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     aco::Algorithm::Config config = {.agents_count = agents,
                                      .pheromone_evaporation = pheromone_evaporation};
-    auto                   algorithm = aco::Algorithm::make(aco::DeviceType::CPU, gen,
+    auto                   algorithm = aco::Algorithm::make(aco::DeviceType::GPU, gen,
                                                             aco::Graph(gen, cities, min_pheromone), config);
 
     // Main loop

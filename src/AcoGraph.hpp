@@ -21,6 +21,7 @@ class Graph {
     using Index = std::size_t;
 
     friend bool operator==(const Graph&, const Graph&);
+    friend class AlgorithmGpu;
 
   public:
     // Create a graph with a given number of nodes.

@@ -27,6 +27,9 @@ class AlgorithmGpu : public Algorithm {
     int path_length(const Path& path) const override;
 
   private:
+    std::vector<float> calculate_path_scores() const;
+
+  private:
     Path shortest_path;
 };
 

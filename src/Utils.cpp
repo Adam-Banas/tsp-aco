@@ -9,6 +9,11 @@ namespace utils {
 std::size_t roullette(const std::vector<float>& scores, std::mt19937& gen) {
     auto sum = std::accumulate(begin(scores), end(scores), .0);
 
+    if (sum == 0) {
+        std::cerr << "Error in roullette algorithm. Sum: " << sum << "\n";
+        throw std::runtime_error("Error in roullette algorithm!");
+    }
+
     std::uniform_real_distribution<> distrib(0, sum);
     float                            random = distrib(gen);
 
