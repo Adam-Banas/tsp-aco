@@ -4,9 +4,9 @@
 #include <random>
 #include <vector>
 
-#include "AcoAlgorithm.hpp"
+#include "AcoAlgorithmCpu.hpp"
 #include "AcoGraph.hpp"
-#include "utils.hpp"
+#include "Utils.hpp"
 
 using Path = std::vector<std::size_t>; // Indices of cities in order
 
@@ -45,14 +45,14 @@ int main(int argc, char* argv[]) {
     int max_iterations = std::stoi(argv[1]);
 
     // Configuration
-    std::size_t cities = 30;
-    std::size_t agents = cities;
+    std::size_t cities = 64;
+    std::size_t agents = cities * 16;
     float       pheromone_evaporation = 0.9; // 10% of pheromone evaporates every iteration
     float       min_pheromone = 0.1; // Minimum pheromone on an edge (which is also the starting
                                      // pheromone). I observed the following rough guidelines:
     // - The greater total distance to travel (depends on the number of cities and the distances
     //   between them), the smaller this number needs to be.
-    // - The more ants we have, the bigger this number should be.
+    // - The more ants we have, the bigger this number can be.
 
     // Initialization
     std::random_device rd;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     aco::Algorithm::Config config = {.agents_count = agents,
                                      .pheromone_evaporation = pheromone_evaporation};
-    auto algorithm = aco::Algorithm(gen, aco::Graph(gen, cities, min_pheromone), config);
+    auto algorithm = aco::AlgorithmCpu(gen, aco::Graph(gen, cities, min_pheromone), config);
 
     // Main loop
     for (int a = 0; a < max_iterations; ++a) {

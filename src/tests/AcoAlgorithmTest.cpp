@@ -2,10 +2,11 @@
 #include <utility>
 #include <vector>
 
-#include "../AcoAlgorithm.hpp"
+#include "../AcoAlgorithmCpu.hpp"
 #include "../AcoGraph.hpp"
 
 using aco::Algorithm;
+using aco::AlgorithmCpu;
 using aco::Graph;
 
 class AcoAlgorithmTest : public ::testing::Test {
@@ -14,8 +15,8 @@ class AcoAlgorithmTest : public ::testing::Test {
 
   public:
     // Convenience function, to avoid passing gen every time
-    Algorithm make_algorithm(aco::Graph graph, Algorithm::Config config) {
-        return Algorithm(gen, std::move(graph), config);
+    AlgorithmCpu make_algorithm(aco::Graph graph, Algorithm::Config config) {
+        return AlgorithmCpu(gen, std::move(graph), config);
     }
 
     // Path should be of proper length, every index should be valid and unique
@@ -75,7 +76,7 @@ TEST_F(AcoAlgorithmTest, GetGraph) {
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
 
-    Algorithm algorithm = make_algorithm(graph, config);
+    auto algorithm = make_algorithm(graph, config);
 
     EXPECT_EQ(graph, algorithm.get_graph());
 }
@@ -85,7 +86,7 @@ TEST_F(AcoAlgorithmTest, InitialPathIsValid) {
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(graph, config);
+    auto                    algorithm = make_algorithm(graph, config);
 
     auto path = algorithm.get_shortest_path();
     validate_path(graph, path);
@@ -97,7 +98,7 @@ TEST_F(AcoAlgorithmTest, PheromonesAreUpdatedAfterSimulation) {
     Graph       initial_graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(initial_graph, config);
+    auto                    algorithm = make_algorithm(initial_graph, config);
 
     // Run simulation
     algorithm.advance();
@@ -112,7 +113,7 @@ TEST_F(AcoAlgorithmTest, ShortestPathIsValidAfterEveryIteration) {
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(graph, config);
+    auto                    algorithm = make_algorithm(graph, config);
 
     // Run simulation
     for (int i = 0; i < 20; ++i) {
@@ -129,7 +130,7 @@ TEST_F(AcoAlgorithmTest, FinalPathDifferFromTheInitialOne) {
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(graph, config);
+    auto                    algorithm = make_algorithm(graph, config);
 
     auto initial_path = algorithm.get_shortest_path();
 
@@ -149,7 +150,7 @@ TEST_F(AcoAlgorithmTest, IterationBestPathIsValidAfterEveryIteration) {
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(graph, config);
+    auto                    algorithm = make_algorithm(graph, config);
 
     // Run simulation
     for (int i = 0; i < 20; ++i) {
@@ -165,7 +166,7 @@ TEST_F(AcoAlgorithmTest, CompareIterationBestPathAndBestSoFar) {
     Graph       graph(gen, nodes, /*initial_pheromone=*/0.01);
 
     const Algorithm::Config config{/*agents_count=*/nodes, /*pheromone_evaporation=*/0.9};
-    Algorithm               algorithm = make_algorithm(graph, config);
+    auto                    algorithm = make_algorithm(graph, config);
 
     const int max_iterations = 20;
     int       equal_count = 0;

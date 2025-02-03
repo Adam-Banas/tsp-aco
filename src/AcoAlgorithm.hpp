@@ -1,6 +1,7 @@
-// #include <algorithm>
-// #include <vector>
+#include <cstddef>
 #include <memory>
+#include <random>
+#include <vector>
 
 #include "AcoGraph.hpp"
 
@@ -9,9 +10,7 @@
 
 namespace aco {
 
-// class MoveStrategy;
-
-// Main algorithm that uses ACO (Ant Colony Optimization) to solve a graph problem.
+// Base class for algorithms that use ACO (Ant Colony Optimization) to solve a graph problem.
 // At the moment it is tightly coupled to solve TSP (Travelling Salesman Problem).
 class Algorithm {
   public:
@@ -26,25 +25,26 @@ class Algorithm {
     };
 
   public:
+    // Throws std::invalid_argument on invalid configuration
     explicit Algorithm(std::mt19937& random_generator, Graph graph, Config config);
+    virtual ~Algorithm() = default;
 
   public:
-    // Accessors
-    const Graph& get_graph() const;
-    const Path&  get_shortest_path() const;
+    // Accessors. For algorithms operating on GPU, this is also synchronization point.
+    virtual const Graph& get_graph() const = 0;
+    virtual const Path&  get_shortest_path() const = 0;
 
     // Advance simulation by one step. Return best path from that iteration.
-    Path advance();
+    virtual Path advance() = 0;
 
   public:
     // TODO: Move the following method to aco::Graph
-    int path_length(const Path& path) const;
+    virtual int path_length(const Path& path) const = 0;
 
-  private:
+  protected:
     std::mt19937& gen;
     Graph         graph;
     Config        config;
-    Path          shortest_path;
 };
 
 } // namespace aco

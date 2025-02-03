@@ -1,7 +1,19 @@
 add_library(
+    utils SHARED
+    Utils.cpp
+)
+
+add_library(
     aco_algorithm SHARED
+    AcoAlgorithmCpu.cpp
     AcoAlgorithm.cpp
-    AcoGraph.cpp)
+    AcoGraph.cpp
+)
+
+target_link_libraries(
+    aco_algorithm
+    PUBLIC utils
+)
 
 add_executable(
     tcp_aco
