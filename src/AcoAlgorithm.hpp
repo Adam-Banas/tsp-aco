@@ -10,6 +10,8 @@
 
 namespace aco {
 
+enum class DeviceType { CPU, GPU };
+
 // Base class for algorithms that use ACO (Ant Colony Optimization) to solve a graph problem.
 // At the moment it is tightly coupled to solve TSP (Travelling Salesman Problem).
 class Algorithm {
@@ -25,9 +27,13 @@ class Algorithm {
     };
 
   public:
-    // Throws std::invalid_argument on invalid configuration
+    // Throws std::invalid_argument on invalid configuration.
     explicit Algorithm(std::mt19937& random_generator, Graph graph, Config config);
     virtual ~Algorithm() = default;
+
+    // Factory method. Throws std::invalid_argument on invalid configuration.
+    static std::unique_ptr<Algorithm> make(DeviceType device, std::mt19937& random_generator,
+                                           Graph graph, Config config);
 
   public:
     // Accessors. For algorithms operating on GPU, this is also synchronization point.

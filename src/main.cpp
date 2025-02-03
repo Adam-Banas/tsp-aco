@@ -60,17 +60,18 @@ int main(int argc, char* argv[]) {
 
     aco::Algorithm::Config config = {.agents_count = agents,
                                      .pheromone_evaporation = pheromone_evaporation};
-    auto algorithm = aco::AlgorithmCpu(gen, aco::Graph(gen, cities, min_pheromone), config);
+    auto                   algorithm = aco::Algorithm::make(aco::DeviceType::CPU, gen,
+                                                            aco::Graph(gen, cities, min_pheromone), config);
 
     // Main loop
     for (int a = 0; a < max_iterations; ++a) {
         // Remember previous best, advance simulation
-        auto previous_best = algorithm.get_shortest_path();
-        auto iteration_best = algorithm.advance();
+        auto previous_best = algorithm->get_shortest_path();
+        auto iteration_best = algorithm->advance();
 
         // Print results
         std::cout << "\nIteration " << a << " results:\n";
-        std::cout << "Shortest path length: " << algorithm.path_length(iteration_best) << "\n";
-        std::cout << "Previous best: " << algorithm.path_length(previous_best) << "\n";
+        std::cout << "Shortest path length: " << algorithm->path_length(iteration_best) << "\n";
+        std::cout << "Previous best: " << algorithm->path_length(previous_best) << "\n";
     }
 }

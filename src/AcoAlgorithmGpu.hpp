@@ -1,23 +1,21 @@
-#include <memory>
-
 #include "AcoAlgorithm.hpp"
 
-#ifndef ACO_ALGORITHM_CPU_HPP
-#define ACO_ALGORITHM_CPU_HPP
+#ifndef ACO_ALGORITHM_GPU_HPP
+#define ACO_ALGORITHM_GPU_HPP
 
 namespace aco {
 
-// CPU implmentation of the ACO algorithm.
-class AlgorithmCpu : public Algorithm {
+// CUDA implmentation of the ACO algorithm.
+class AlgorithmGpu : public Algorithm {
   public:
     friend class Algorithm;
 
   private:
     // Should be created via factory method.
-    explicit AlgorithmCpu(std::mt19937& random_generator, Graph graph, Config config);
+    explicit AlgorithmGpu(std::mt19937& random_generator, Graph graph, Config config);
 
   public:
-    // Accessors
+    // Accessors. These may trigger synchronization and data transfer between GPU and host.
     const Graph& get_graph() const override;
     const Path&  get_shortest_path() const override;
 
@@ -34,4 +32,4 @@ class AlgorithmCpu : public Algorithm {
 
 } // namespace aco
 
-#endif // ACO_ALGORITHM_CPU_HPP
+#endif // ACO_ALGORITHM_GPU_HPP
