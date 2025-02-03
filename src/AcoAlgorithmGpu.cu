@@ -205,8 +205,8 @@ std::vector<float> AlgorithmGpu::calculate_path_scores() const {
     send_to_device(pheromones, graph.pheromones);
 
     // Launch kernel
-    auto threads_per_block = 1;
-    dim3 block_size(1, 1);
+    auto threads_per_block = 16;
+    dim3 block_size(threads_per_block, threads_per_block);
     auto blocks_per_grid_dim = (buffer_size + threads_per_block + 1) / threads_per_block; // Rounded up
     dim3 blocks_per_grid(blocks_per_grid_dim, blocks_per_grid_dim);
     calculate_edge_scores<<<blocks_per_grid, block_size>>>(costs, pheromones, scores,
