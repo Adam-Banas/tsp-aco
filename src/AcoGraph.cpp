@@ -10,7 +10,7 @@ Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float init
     : costs(nodes_input * nodes_input), pheromones(nodes_input * nodes_input, init_pheromone),
       nodes(nodes_input), initial_pheromone(init_pheromone) {
 
-    std::uniform_int_distribution<> distrib(1, /*max_dist=*/10);
+    std::uniform_int_distribution<> distrib(1, /*max_dist=*/nodes_input);
 
     // Populate distances graph
     for (int i = 0; i < nodes; ++i) {
