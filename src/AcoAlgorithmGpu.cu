@@ -34,11 +34,74 @@ static void initialize_cuda() {
     }
 }
 
-AlgorithmGpu::AlgorithmGpu(std::mt19937& random_generator, Graph graph_arg, Config config_arg)
-    : Algorithm(random_generator, std::move(graph_arg), config_arg), shortest_path() {
-    initialize_cuda();
+// Allocate a buffer of given type on the device
+template <typename T> static T* allocate_on_device(std::size_t num_elements) {
+    auto size_in_bytes = num_elements * sizeof(T);
+    T*   buffer = nullptr;
+    auto res = cudaMalloc((void**)&buffer, size_in_bytes);
 
+    if (res != cudaSuccess) {
+        std::cerr << "Failed to allocate device buffer! Error code: " << cudaGetErrorString(res)
+                  << "\n";
+        throw std::runtime_error("Failed to allocate device buffer");
+    }
+
+    return buffer;
+}
+
+template <typename T> void free_device_buffer(T* buffer) {
+    auto res = cudaFree(buffer);
+    if (res != cudaSuccess) {
+        std::cerr << "Failed to free device buffer! Error code: " << cudaGetErrorString(res)
+                  << "\n";
+    }
+}
+
+// Send buffer from host to device
+template <typename T> static void send_to_device(T* dst, const std::vector<T>& src) {
+    auto size_in_bytes = src.size() * sizeof(T);
+    auto res = cudaMemcpy(dst, src.data(), size_in_bytes, cudaMemcpyHostToDevice);
+
+    if (res != cudaSuccess) {
+        std::cerr << "Failed to send buffer to device! Error code: " << cudaGetErrorString(res)
+                  << "\n";
+        throw std::runtime_error("Failed to send buffer to device");
+    }
+}
+
+// Send buffer from device to host
+template <typename T> static void send_to_host(std::vector<T>& dst, T* src) {
+    auto size_in_bytes = dst.size() * sizeof(T);
+    auto res = cudaMemcpy(dst.data(), src, size_in_bytes, cudaMemcpyDeviceToHost);
+
+    if (res != cudaSuccess) {
+        std::cerr << "Failed to send buffer from device to host! Error code: "
+                  << cudaGetErrorString(res) << "\n";
+        throw std::runtime_error("Failed to send buffer from device to host");
+    }
+}
+
+AlgorithmGpu::AlgorithmGpu(std::mt19937& random_generator, Graph graph_arg, Config config_arg)
+    : Algorithm(random_generator, std::move(graph_arg), config_arg), shortest_path(),
+      costs(nullptr), pheromones(nullptr), scores(nullptr) {
     shortest_path = make_valid_path(graph);
+
+    // Initialize CUDA, allocate buffers
+    initialize_cuda();
+    auto buffer_size = graph.get_size() * graph.get_size();
+    costs = allocate_on_device<int>(buffer_size);
+    pheromones = allocate_on_device<float>(buffer_size);
+    scores = allocate_on_device<float>(buffer_size);
+
+    // Send costs from host graph to device (these never change, so it can be done just once)
+    send_to_device(costs, graph.costs);
+}
+
+AlgorithmGpu::~AlgorithmGpu() {
+    // TODO: Some abstraction for buffers would be useful
+    free_device_buffer(costs);
+    free_device_buffer(pheromones);
+    free_device_buffer(scores);
 }
 
 const Graph& AlgorithmGpu::get_graph() const {
@@ -138,79 +201,23 @@ int AlgorithmGpu::path_length(const Path& path) const {
     return length;
 }
 
-// Allocate a buffer of given type on the device
-template <typename T> static T* allocate_on_device(std::size_t num_elements) {
-    auto size_in_bytes = num_elements * sizeof(T);
-    T*   buffer = nullptr;
-    auto res = cudaMalloc((void**)&buffer, size_in_bytes);
-
-    if (res != cudaSuccess) {
-        std::cerr << "Failed to allocate device buffer! Error code: " << cudaGetErrorString(res)
-                  << "\n";
-        throw std::runtime_error("Failed to allocate device buffer");
-    }
-
-    return buffer;
-}
-
-template <typename T> void free_device_buffer(T* buffer) {
-    auto res = cudaFree(buffer);
-    if (res != cudaSuccess) {
-        std::cerr << "Failed to free device buffer! Error code: " << cudaGetErrorString(res)
-                  << "\n";
-        throw std::runtime_error("Failed to free device buffer");
-    }
-}
-
-// Send buffer from host to device
-template <typename T> static void send_to_device(T* dst, const std::vector<T>& src) {
-    auto size_in_bytes = src.size() * sizeof(T);
-    auto res = cudaMemcpy(dst, src.data(), size_in_bytes, cudaMemcpyHostToDevice);
-
-    if (res != cudaSuccess) {
-        std::cerr << "Failed to send buffer to device! Error code: " << cudaGetErrorString(res)
-                  << "\n";
-        throw std::runtime_error("Failed to send buffer to device");
-    }
-}
-
-// Send buffer from device to host
-template <typename T> static void send_to_host(std::vector<T>& dst, T* src) {
-    auto size_in_bytes = dst.size() * sizeof(T);
-    auto res = cudaMemcpy(dst.data(), src, size_in_bytes, cudaMemcpyDeviceToHost);
-
-    if (res != cudaSuccess) {
-        std::cerr << "Failed to send buffer from device to host! Error code: "
-                  << cudaGetErrorString(res) << "\n";
-        throw std::runtime_error("Failed to send buffer from device to host");
-    }
-}
-
 // Calculate on GPU. Works probably much slower than CPU, because of all these allocations and data
 // transfers.
 std::vector<float> AlgorithmGpu::calculate_path_scores() const {
     auto cities = graph.get_size();
     auto buffer_size = cities * cities;
 
-    // Allocate buffers on device
-    // TODO: This can be done once, at initilization stage
-    int*   costs = allocate_on_device<int>(buffer_size);
-    float* pheromones = allocate_on_device<float>(buffer_size);
-    float* scores = allocate_on_device<float>(buffer_size);
-
     // Send data to device
-    // TODO: costs do not change, they can be sent once, at initialization stage
-    send_to_device(costs, graph.costs);
     // TODO: In general, pheromones can be stored and updated directly on device
     send_to_device(pheromones, graph.pheromones);
 
     // Launch kernel
     auto threads_per_block = 16;
     dim3 block_size(threads_per_block, threads_per_block);
-    auto blocks_per_grid_dim = (buffer_size + threads_per_block + 1) / threads_per_block; // Rounded up
+    auto blocks_per_grid_dim =
+        (buffer_size + threads_per_block + 1) / threads_per_block; // Rounded up
     dim3 blocks_per_grid(blocks_per_grid_dim, blocks_per_grid_dim);
-    calculate_edge_scores<<<blocks_per_grid, block_size>>>(costs, pheromones, scores,
-                                                                  cities);
+    calculate_edge_scores<<<blocks_per_grid, block_size>>>(costs, pheromones, scores, cities);
 
     auto res = cudaGetLastError();
     if (res != cudaSuccess) {
@@ -222,12 +229,6 @@ std::vector<float> AlgorithmGpu::calculate_path_scores() const {
     // Get data
     std::vector<float> scores_host(buffer_size);
     send_to_host(scores_host, scores);
-
-    // Free device buffers
-    // TODO: Use RAII.
-    free_device_buffer(costs);
-    free_device_buffer(pheromones);
-    free_device_buffer(scores);
 
     return scores_host;
 }

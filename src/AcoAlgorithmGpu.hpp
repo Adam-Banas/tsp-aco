@@ -13,6 +13,7 @@ class AlgorithmGpu : public Algorithm {
   private:
     // Should be created via factory method.
     explicit AlgorithmGpu(std::mt19937& random_generator, Graph graph, Config config);
+    virtual ~AlgorithmGpu();
 
   public:
     // Accessors. These may trigger synchronization and data transfer between GPU and host.
@@ -33,6 +34,11 @@ class AlgorithmGpu : public Algorithm {
 
   private:
     Path shortest_path;
+
+    // Device buffers
+    int*   costs;
+    float* pheromones;
+    float* scores;
 };
 
 } // namespace aco
