@@ -22,6 +22,8 @@ class AlgorithmGpu : public Algorithm {
     // Advance simulation by one step. Return best path from that iteration.
     Path advance() override;
 
+    std::string info() const override { return "GPU"; }
+
   public:
     // TODO: Move the following method to aco::Graph
     int path_length(const Path& path) const override;

@@ -47,6 +47,9 @@ class Algorithm {
     // Advance simulation by one step. Return best path from that iteration.
     virtual Path advance() = 0;
 
+    // Algorithm info
+    virtual std::string info() const = 0;
+
   public:
     // TODO: Move the following method to aco::Graph
     virtual int path_length(const Path& path) const = 0;

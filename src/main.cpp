@@ -34,6 +34,15 @@ const Path& get_shortest_path(const aco::Graph& graph, const std::vector<Path>& 
     });
 }
 
+std::ostream& operator<<(std::ostream& out, const std::vector<aco::Graph::Index>& path) {
+    out << "[";
+    for (auto elem : path) {
+        out << elem << " ";
+    }
+    out << "]";
+    return out;
+}
+
 int main(int argc, char* argv[]) {
     // Parse command line arguments
     if (argc != 2) {
@@ -57,21 +66,33 @@ int main(int argc, char* argv[]) {
     // Initialization
     std::random_device rd;
     std::mt19937       gen(rd());
+    aco::Graph         graph = aco::Graph(gen, cities, min_pheromone);
 
     aco::Algorithm::Config config = {.agents_count = agents,
                                      .pheromone_evaporation = pheromone_evaporation};
-    auto                   algorithm = aco::Algorithm::make(aco::DeviceType::GPU, gen,
-                                                            aco::Graph(gen, cities, min_pheromone), config);
+
+    std::vector<std::unique_ptr<aco::Algorithm>> algorithms;
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::CPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::CPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::CPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::GPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::GPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::GPU, gen, graph, config));
 
     // Main loop
-    for (int a = 0; a < max_iterations; ++a) {
-        // Remember previous best, advance simulation
-        auto previous_best = algorithm->get_shortest_path();
-        auto iteration_best = algorithm->advance();
+    for (int i = 0; i < max_iterations; ++i) {
+        std::cout << "\n\nIteration " << i << "\n\n";
+        for (auto& algorithm : algorithms) {
+            // Remember previous best, advance simulation
+            auto previous_best = algorithm->get_shortest_path();
+            auto iteration_best = algorithm->advance();
 
-        // Print results
-        std::cout << "\nIteration " << a << " results:\n";
-        std::cout << "Shortest path length: " << algorithm->path_length(iteration_best) << "\n";
-        std::cout << "Previous best: " << algorithm->path_length(previous_best) << "\n";
+            // Print results
+            std::cout << "Algorithm: " << algorithm->info() << "\n";
+            std::cout << "Shortest path: " << iteration_best
+                      << ", length: " << algorithm->path_length(iteration_best) << "\n";
+            std::cout << "Previous best: " << previous_best
+                      << ", length: " << algorithm->path_length(previous_best) << "\n";
+        }
     }
 }
