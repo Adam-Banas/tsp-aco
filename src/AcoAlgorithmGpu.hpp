@@ -31,14 +31,18 @@ class AlgorithmGpu : public Algorithm {
 
   private:
     std::vector<float> calculate_path_scores() const;
+    void               update_pheromones(const std::vector<Path>& paths);
+    void               evaporate();
+    void               add_ants_pheromones(const std::vector<Path>& paths);
 
   private:
     Path shortest_path;
 
     // Device buffers
-    int*   costs;
-    float* pheromones;
-    float* scores;
+    int*         costs;
+    float*       pheromones;
+    float*       scores;
+    std::size_t* paths;
 };
 
 } // namespace aco
