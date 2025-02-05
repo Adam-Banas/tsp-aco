@@ -20,7 +20,23 @@ target_link_libraries(
           aco_algorithm
 )
 
+# Add functional tests executable
+add_executable(
+  tsp_aco_functional_tests
+  SimulationFunctionalTest.cpp
+)
+target_link_libraries(
+  tsp_aco_functional_tests
+  PRIVATE GTest::gtest_main
+          aco_algorithm
+)
+
 # Enable CMake's test runner to discover the tests
 # (usage, when built: cd tests && ctest)
 include(GoogleTest)
 gtest_discover_tests(tsp_aco_tests)
+gtest_discover_tests(tsp_aco_functional_tests)
+
+# Copy data files
+# TODO: Probably good idea to add data subdirectory
+configure_file(graph_64.json graph_64.json)
