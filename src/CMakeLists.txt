@@ -29,3 +29,4 @@ target_link_libraries(
 )
 
 add_subdirectory(tests)
+add_subdirectory(tools)
