@@ -19,12 +19,12 @@ target_link_libraries(
 )
 
 add_executable(
-    tcp_aco
+    tsp_aco
     main.cpp
 )
 
 target_link_libraries(
-    tcp_aco
+    tsp_aco
     aco_algorithm
 )
 
