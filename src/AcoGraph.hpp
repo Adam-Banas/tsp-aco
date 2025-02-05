@@ -31,6 +31,11 @@ class Graph {
     // - all pheromones get the same amount of initial pheromone
     explicit Graph(std::mt19937& random_generator, std::size_t nodes, float initial_pheromone);
 
+  private:
+    // Value constructor, useful for testing
+    explicit Graph(std::vector<int> costs, std::vector<float> pheromones, std::size_t nodes,
+                   float initial_pheromone);
+
   public:
     // Basic graph operations
     std::size_t get_size() const;
@@ -41,6 +46,11 @@ class Graph {
     // Convenience functions
     void add_pheromone_two_way(Index a, Index b, float amount);
     void update_all(float coefficient);
+
+    // Serialization. The idea here is to serialize to a human-readable format, not really for
+    // efficiency.
+    std::string  to_string() const;
+    static Graph from_string(const std::string& string);
 
   private:
     Index internal_index(Index src, Index dst) const;

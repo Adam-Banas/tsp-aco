@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "../third_party/nlohmann/json.hpp"
+
 namespace aco {
 
 Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float init_pheromone)
@@ -21,6 +23,26 @@ Graph::Graph(std::mt19937& random_generator, std::size_t nodes_input, float init
         }
     }
 }
+
+Graph::Graph(std::vector<int> costs_arg, std::vector<float> pheromones_arg, std::size_t nodes,
+             float initial_pheromone)
+    : costs(std::move(costs_arg)), pheromones(std::move(pheromones_arg)), nodes(nodes),
+      initial_pheromone(initial_pheromone) {
+    // Verify the sizes of containers
+    const auto expected_size = nodes * nodes;
+    if (expected_size != costs.size()) {
+        std::cerr << "Graph constructor: Incorrect costs vector size! Expected: " << expected_size
+                  << ", got: " << costs.size() << "\n";
+        throw std::invalid_argument("Graph constructor: Incorrect costs vector size!");
+    }
+
+    if (expected_size != pheromones.size()) {
+        std::cerr << "Graph constructor: Incorrect pheromones vector size! Expected: "
+                  << expected_size << ", got: " << pheromones.size() << "\n";
+        throw std::invalid_argument("Graph constructor: Incorrect pheromones vector size!");
+    }
+}
+
 std::size_t Graph::get_size() const {
     return nodes;
 }
@@ -52,6 +74,29 @@ void Graph::update_all(float coefficient) {
                    [&](auto elem) { return std::max(elem * coefficient, initial_pheromone); });
 }
 
+std::string Graph::to_string() const {
+    auto json = nlohmann::json{{"costs", costs},
+                               {"pheromones", pheromones},
+                               {"nodes", nodes},
+                               {"initial_pheromone", initial_pheromone}};
+    return json.dump(/*indent=*/4);
+}
+
+Graph Graph::from_string(const std::string& string) {
+    try {
+        nlohmann::json json = nlohmann::json::parse(string);
+        auto           costs = json.at("costs").get<std::vector<int>>();
+        auto           pheromones = json.at("pheromones").get<std::vector<float>>();
+        auto           nodes = json.at("nodes").get<std::size_t>();
+        auto           initial_pheromone = json.at("initial_pheromone").get<float>();
+        return Graph(std::move(costs), std::move(pheromones), nodes, initial_pheromone);
+    } catch (const nlohmann::detail::exception& e) {
+        // Hide implementation details (exceptions from json library), throw a generic one.
+        std::cerr << "Exception thrown in graph deserialization! What: " << e.what() << "\n";
+        throw std::invalid_argument("Exception thrown in graph deserialization!");
+    }
+}
+
 Graph::Index Graph::internal_index(Index src, Index dst) const {
     if (src == dst || src >= nodes || dst >= nodes) {
         std::cerr << "aco::Graph invalid arguments. Graph size: " << nodes << ", src : " << src
@@ -63,7 +108,8 @@ Graph::Index Graph::internal_index(Index src, Index dst) const {
 }
 
 bool operator==(const Graph& lhs, const Graph& rhs) {
-    return lhs.costs == rhs.costs && lhs.pheromones == rhs.pheromones;
+    return lhs.costs == rhs.costs && lhs.pheromones == rhs.pheromones && lhs.nodes == rhs.nodes &&
+           lhs.initial_pheromone == rhs.initial_pheromone;
 }
 
 } // namespace aco
