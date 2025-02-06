@@ -74,8 +74,8 @@ void standard_simulation(int max_iterations, std::mt19937& gen, aco::Graph graph
 void benchmark_simulation(int max_iterations, std::mt19937& gen, aco::Graph graph,
                           aco::Algorithm::Config config) {
     std::vector<std::unique_ptr<aco::Algorithm>> algorithms;
-    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::CPU, gen, graph, config));
     algorithms.push_back(aco::Algorithm::make(aco::DeviceType::GPU, gen, graph, config));
+    algorithms.push_back(aco::Algorithm::make(aco::DeviceType::CPU, gen, graph, config));
 
     struct Result {
         std::string      info;

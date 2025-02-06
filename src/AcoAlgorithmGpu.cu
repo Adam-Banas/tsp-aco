@@ -214,38 +214,42 @@ AlgorithmGpu::Path AlgorithmGpu::advance() {
 
     // Generate solutions
     std::vector<Path> paths(config.agents_count);
-    for (std::size_t i = 0; i < config.agents_count; ++i) {
-        auto& path = paths[i];
+    {
+        auto scoped = utils::scoped_time_measurement("AlgorithmGpu: generate solutions");
+        for (std::size_t i = 0; i < config.agents_count; ++i) {
+            auto& path = paths[i];
 
-        // Start from a city with index 'i', modulo in case the number of agents is higher than the
-        // number of cities
-        path.push_back(i % cities);
+            // Start from a city with index 'i', modulo in case the number of agents is higher than
+            // the number of cities
+            path.push_back(i % cities);
 
-        // Choose one new destination in every iteration
-        while (path.size() < cities) {
-            // Calculate the score (desire to go) for every city
-            auto               current_city = path.back();
-            std::vector<float> scores(cities);
-            for (std::size_t j = 0; j < cities; ++j) {
-                if (utils::contains(path, j)) {
-                    // Path already visited - leave it a score of zero
-                    continue;
+            // Choose one new destination in every iteration
+            while (path.size() < cities) {
+                // Calculate the score (desire to go) for every city
+                auto               current_city = path.back();
+                std::vector<float> scores(cities);
+                for (std::size_t j = 0; j < cities; ++j) {
+                    if (utils::contains(path, j)) {
+                        // Path already visited - leave it a score of zero
+                        continue;
+                    }
+
+                    scores[j] = path_scores[current_city * cities + j];
                 }
 
-                scores[j] = path_scores[current_city * cities + j];
+                // Choose the target city using roullette random algorithm
+                auto target = utils::roullette(scores, gen);
+                path.push_back(target);
             }
 
-            // Choose the target city using roullette random algorithm
-            auto target = utils::roullette(scores, gen);
-            path.push_back(target);
-        }
-
-        // Path calculated - remember it if is shorter than the current best
-        if (path_length(path) < path_length(iteration_best)) {
-            iteration_best = path;
+            // Path calculated - remember it if is shorter than the current best
+            if (path_length(path) < path_length(iteration_best)) {
+                iteration_best = path;
+            }
         }
     }
 
+    // TODO: The first step (evaporation) can be done in parallel to the above computation.
     // Update pheromones
     update_pheromones(paths);
 
@@ -274,6 +278,7 @@ int AlgorithmGpu::path_length(const Path& path) const {
 // Calculate on GPU. Works probably much slower than CPU, because of all these allocations and data
 // transfers.
 std::vector<float> AlgorithmGpu::calculate_path_scores() const {
+    auto scoped = utils::scoped_time_measurement("AlgorithmGpu: calculate path scores");
     auto cities = graph.get_size();
     auto buffer_size = cities * cities;
 
@@ -305,6 +310,7 @@ std::vector<float> AlgorithmGpu::calculate_path_scores() const {
 }
 
 void AlgorithmGpu::update_pheromones(const std::vector<Path>& paths) {
+    auto scoped = utils::scoped_time_measurement("AlgorithmGpu: update pheromones");
     // Step 1: evaporation
     evaporate();
 
