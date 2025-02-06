@@ -184,6 +184,10 @@ AlgorithmGpu::AlgorithmGpu(std::mt19937& random_generator, Graph graph_arg, Conf
 
     // Send costs from host graph to device (these never change, so it can be done just once)
     send_to_device(costs, graph.costs);
+
+    // Send pheromones from host graph to device. These will be stored and manipulated on device,
+    // synchronized to host only when requested.
+    send_to_device(pheromones, graph.pheromones);
 }
 
 AlgorithmGpu::~AlgorithmGpu() {
@@ -193,10 +197,12 @@ AlgorithmGpu::~AlgorithmGpu() {
     free_device_buffer(scores);
 }
 
+// From GPU point of view, this operation is still logically constant, it doesn't manipulate any
+// data on the device. It is a synchronization point though, so it updates the pheromones graph
+// stored on host, to match the one on the device.
 const Graph& AlgorithmGpu::get_graph() const {
-    // This is not a problem at the moment, but will be soon. Commit that stores pheromones directly
-    // on device is coming.
-    std::cerr << "[WARN] No synchronization AlgorithmGpu::get_graph\n";
+    send_to_host(const_cast<std::vector<float>&>(graph.pheromones), pheromones);
+
     return graph;
 }
 
@@ -282,10 +288,6 @@ std::vector<float> AlgorithmGpu::calculate_path_scores() const {
     auto cities = graph.get_size();
     auto buffer_size = cities * cities;
 
-    // Send data to device
-    // TODO: In general, pheromones can be stored and updated directly on device
-    send_to_device(pheromones, graph.pheromones);
-
     // Launch kernel
     auto threads_per_block = 16;
     dim3 block_size(threads_per_block, threads_per_block);
@@ -322,10 +324,6 @@ void AlgorithmGpu::evaporate() {
     auto cities = graph.get_size();
     auto buffer_size = cities * cities;
 
-    // Send data to device
-    // TODO: In general, pheromones can be stored and updated directly on device
-    send_to_device(pheromones, graph.pheromones);
-
     // Launch kernel
     auto threads_per_block = 16;
     dim3 block_size(threads_per_block, threads_per_block);
@@ -341,9 +339,6 @@ void AlgorithmGpu::evaporate() {
                   << "\n";
         throw std::runtime_error("Failed to launch evaporation kernel!");
     }
-
-    // Send to host
-    send_to_host(graph.pheromones, pheromones);
 }
 
 void AlgorithmGpu::add_ants_pheromones(const std::vector<Path>& travelled_paths) {
@@ -351,8 +346,6 @@ void AlgorithmGpu::add_ants_pheromones(const std::vector<Path>& travelled_paths)
     auto total_threads = config.agents_count;
 
     // Send data to device
-    // TODO: In general, pheromones can be stored and updated directly on device
-    send_to_device(pheromones, graph.pheromones);
     send_to_device(paths, travelled_paths);
 
     // Launch kernel
@@ -367,9 +360,6 @@ void AlgorithmGpu::add_ants_pheromones(const std::vector<Path>& travelled_paths)
                   << cudaGetErrorString(res) << "\n";
         throw std::runtime_error("Failed to launch add_ants_pheromones kernel!");
     }
-
-    // Send pheromones back to host
-    send_to_host(graph.pheromones, pheromones);
 }
 
 } // namespace aco
